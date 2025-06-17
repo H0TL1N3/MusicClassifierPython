@@ -3,6 +3,10 @@ from tkinter import filedialog as fd
 import ttkbootstrap as ttk
 from ttkbootstrap.icons import Emoji
 from ttkbootstrap.scrolled import ScrolledText
+## Audio and utils for it
+from pydub import AudioSegment
+import simpleaudio as sa
+import time
 ## OpenAI Whisper
 import whisper
 ## Async components
@@ -12,10 +16,6 @@ class MediaPlayer(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.pack(fill="both", expand=True)
-        # Internal state
-        self.hdr_var = ttk.StringVar()
-        self.elapsed_var = ttk.DoubleVar(value=0)
-        self.remain_var = ttk.DoubleVar(value=190)
         # Playlist and chosen track state
         self.playlists = {
             "BERT": [],
@@ -31,6 +31,16 @@ class MediaPlayer(ttk.Frame):
         self.elapse = None
         self.scale = None
         self.remain = None
+        self.elapsed_var = ttk.DoubleVar(value=0)
+        self.remain_var = ttk.DoubleVar(value=190)
+        self.seeking = False
+        # Audio state
+        self.current_audio = None
+        self.current_play_obj = None
+        self.playback_thread = None
+        self.is_playing = False
+        self.pause_position = 0
+        self._stop_playback = threading.Event()
         # Layout
         self.main = None
         self.top = None
@@ -39,7 +49,6 @@ class MediaPlayer(ttk.Frame):
         self.bottom = None
         # Creating GUI elements
         self.create_layout()
-        self.create_header()
         self.create_text_window()
         self.create_playlists()
         self.create_progress_meter()
@@ -57,26 +66,13 @@ class MediaPlayer(ttk.Frame):
         self.bottom = ttk.Frame(self.main)
         self.bottom.pack(side="bottom", fill="both", padx=5, pady=5)
 
-    def create_header(self):
-        """The application header to display user messages"""
-        self.hdr_var.set("Open a file to begin playback")
-        lbl = ttk.Label(
-            master=self,
-            textvariable=self.hdr_var,
-            bootstyle="light-inverse",
-            padding=10
-        )
-        lbl.pack(fill="x", expand=True)
-
     def create_text_window(self):
         """Create frame to contain scrolled text"""
-        # Store in self to access later
         self.transcribedText = ScrolledText(self.left, padding=5, height=10, autohide=True)
         self.transcribedText.pack(fill="both", expand=True)
 
     def create_playlists(self):
         """Create frame to contain playlists"""
-        # Store in self to access later
         self.notebook = ttk.Notebook(self.right)
         self.notebook.pack(fill="both", expand=True)
         self.playlist_frames = {}
@@ -106,6 +102,8 @@ class MediaPlayer(ttk.Frame):
             command=self.on_progress,
             bootstyle="secondary"
         )
+        self.scale.bind("<ButtonPress-1>", self.start_seek)
+        self.scale.bind("<ButtonRelease-1>", self.seek_audio)
         self.scale.pack(side="left", fill="x", expand=True)
 
         self.remain = ttk.Label(container, text='03:10')
@@ -117,49 +115,38 @@ class MediaPlayer(ttk.Frame):
         container.pack(fill="x", expand=True)
         ttk.Style().configure('TButton', font="-size 14")
 
-        rev_btn = ttk.Button(
-            master=container,
-            text=Emoji.get('black left-pointing double triangle with vertical bar'),
-            padding=10,
-        )
-        rev_btn.pack(side="left", fill="x", expand=True)
-
         play_btn = ttk.Button(
             master=container,
             text=Emoji.get('black right-pointing triangle'),
+            command=self.play_audio,
             padding=10,
         )
         play_btn.pack(side="left", fill="x", expand=True)
-
-        fwd_btn = ttk.Button(
-            master=container,
-            text=Emoji.get('black right-pointing double triangle with vertical bar'),
-            padding=10,
-        )
-        fwd_btn.pack(side="left", fill="x", expand=True)
 
         pause_btn = ttk.Button(
             master=container,
             text=Emoji.get('double vertical bar'),
             padding=10,
+            command=self.pause_audio
         )
         pause_btn.pack(side="left", fill="x", expand=True)
 
         stop_btn = ttk.Button(
             master=container,
             text=Emoji.get('black square for stop'),
+            command=self.stop_audio,
             padding=10,
         )
         stop_btn.pack(side="left", fill="x", expand=True)
 
-        stop_btn = ttk.Button(
+        open_file_btn = ttk.Button(
             master=container,
             text=Emoji.get("open file folder"),
             bootstyle="secondary",
-            command=lambda: self.file_dialog(),
+            command=self.file_dialog,
             padding=10
         )
-        stop_btn.pack(side="left", fill="x", expand=True)
+        open_file_btn.pack(side="left", fill="x", expand=True)
 
     def on_progress(self, val: float):
         """Update progress labels when the scale is updated."""
@@ -214,7 +201,6 @@ class MediaPlayer(ttk.Frame):
         # Redundant change of playlist, but may be useful in some scenarios
         self.current_tab = playlist_name
         self.current_track_index = index
-
         self.transcribedText.delete("1.0", "end")
         self.transcribedText.insert("end", entry["text"])
 
@@ -234,7 +220,6 @@ class MediaPlayer(ttk.Frame):
     def transcribe_audio(self, file_path, tab):
         try:
             result = model.transcribe(file_path)
-            print("done")
             for idx, entry in enumerate(self.playlists[tab]):
                 if entry["path"] == file_path:
                     self.playlists[tab][idx]["text"] = result["text"]
@@ -247,6 +232,109 @@ class MediaPlayer(ttk.Frame):
                 if entry["path"] == file_path:
                     entry["text"] = f"Error during transcription: {e}"
 
+    ###
+    ### Helper functions - audio playback
+    ###
+    def play_audio(self):
+        if self.current_tab is None or self.current_track_index is None:
+            return
+        # Load info
+        track = self.playlists[self.current_tab][self.current_track_index]
+        audio_path = track['path']
+        # Resume existing playback
+        if self.current_audio and self.pause_position > 0:
+            self.stop_audio(clear_track=False)
+            audio_segment = self.current_audio[self.pause_position:]
+        else:
+            self.stop_audio(clear_track=False)
+            self.current_audio = AudioSegment.from_file(audio_path)
+            audio_segment = self.current_audio
+        # Load audio
+        self.current_play_obj = sa.play_buffer(
+            audio_segment.raw_data,
+            num_channels=audio_segment.channels,
+            bytes_per_sample=audio_segment.sample_width,
+            sample_rate=audio_segment.frame_rate,
+        )
+        # Progress bar init
+        self.elapsed_var.set(self.pause_position / 1000 if self.pause_position != 0 else 0)
+        self.remain_var.set(self.current_audio.duration_seconds)
+        # Start tracking progress
+        self._stop_playback.clear()
+        self.is_playing = True
+        self.playback_thread = threading.Thread(
+            target=self.track_progress,
+            args=(self.pause_position / 1000,),
+            daemon=True
+        )
+        self.playback_thread.start()
+
+    def track_progress(self, start_offset=0):
+        total = self.current_audio.duration_seconds
+        start_time = time.time() - start_offset
+        while not self._stop_playback.is_set():
+            elapsed = time.time() - start_time
+            if elapsed >= total:
+                break
+            # Update GUI values if not currently seeking
+            if not self.seeking:
+                self.elapsed_var.set(elapsed)
+                self.remain_var.set(total - elapsed)
+                self.scale.set(elapsed / total)
+                self.on_progress(elapsed / total)
+            time.sleep(0.2)
+        self.is_playing = False
+
+    def pause_audio(self):
+        if self.is_playing and self.current_play_obj:
+            self._stop_playback.set()
+            self.current_play_obj.stop()
+            self.pause_position = int(self.elapsed_var.get() * 1000)
+            self.is_playing = False
+
+    def stop_audio(self, clear_track=True):
+        self._stop_playback.set()
+        if self.current_play_obj:
+            self.current_play_obj.stop()
+        # Reset instance variables
+        self.current_play_obj = None
+        self.is_playing = False
+        if clear_track:
+            self.current_audio = None
+            self.current_track_index = None
+            self.pause_position = 0
+            # Reset text and scale
+            self.transcribedText.delete("1.0", "end")
+            self.elapsed_var.set(0)
+            self.remain_var.set(0)
+            self.scale.set(0)
+            self.elapse.configure(text="00:00")
+            self.remain.configure(text="00:00")
+
+    def start_seek(self, event):
+        self.seeking = True
+
+    def seek_audio(self, event):
+        if not self.current_audio:
+            return
+        # Kill playback thread safely to avoid scale flicker
+        self._stop_playback.set()
+        if self.playback_thread and self.playback_thread.is_alive():
+            self.playback_thread.join()
+        # Total duration in seconds
+        total = self.current_audio.duration_seconds
+        # Get the new position from the scale (0.0 to 1.0)
+        new_pos_ratio = self.scale.get()
+        new_pos_sec = new_pos_ratio * total
+        new_pos_ms = int(new_pos_sec * 1000)
+        # Set new position
+        self.stop_audio(clear_track=False)
+        #self.pause_audio()
+        self.pause_position = new_pos_ms
+        self.play_audio()
+        # Stop manual seeking
+        self.seeking = False
+
 if __name__ == '__main__':
     root = ttk.Window()
     root.title("Media Player")
@@ -257,5 +345,4 @@ if __name__ == '__main__':
     # https://pypi.org/project/openai-whisper/
     model = whisper.load_model("base.en")
 
-    mp.scale.set(0.35)
     root.mainloop()

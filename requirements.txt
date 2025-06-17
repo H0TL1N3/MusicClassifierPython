@@ -1,2 +1,4 @@
 ttkbootstrap==1.13.10
 openai-whisper
+pydub
+simpleaudio
