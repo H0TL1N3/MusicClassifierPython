@@ -32,7 +32,7 @@ class Classifier:
             logging_steps=100,  # Log every 100 steps
             fp16=True  # Enable mixed precision for faster training
         )
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained("bert-large-uncased")
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained("bert-large-cased")
         # self.tokenizer.save_pretrained("./bert/tokenizer")
         data_collator = transformers.DataCollatorWithPadding(tokenizer=self.tokenizer)
 
