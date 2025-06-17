@@ -259,13 +259,13 @@ class MediaPlayer(ttk.Frame):
     def transcribe_audio(self, file_path, tab, key):
         try:
             result = model.transcribe(file_path)
-            genreClass = classifier.classify(result["text"])
+            genreClass =  classifier.id_to_class[classifier.classify(result["text"])]
             print("genre:", genreClass)
             for idx, entry in enumerate(self.playlists[tab]):
                 if entry["key"] == key:
                     self.playlists[tab][idx]["text"] = result["text"]
                     # FIXME: Sample color change for now, implement change based on classification.
-                    self.playlists[tab][idx]["status"] = "Rap"
+                    self.playlists[tab][idx]["status"] = genreClass
                     # Callback to rerender lyrics
                     if idx == self.current_track_index:
                         self.select_track(tab, idx)

@@ -1,4 +1,14 @@
 ttkbootstrap==1.13.10
+torch
+torchaudio
+tf-models-official
+transformers
+datasets
+scikit-learn
+accelerate
 openai-whisper
+datasets
+huggingface_hub
+fsspec
 pydub
 simpleaudio

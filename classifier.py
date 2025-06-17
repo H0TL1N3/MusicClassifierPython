@@ -9,6 +9,7 @@ class Classifier:
         self.tokenizer = None
         self.model_name = None
         self.model = None
+        self.id_to_class = ["R&B", "Rock", "Country", "Pop", "Rap"]
 
     def init(self):
         self.model_name = "bert-base-uncased"
@@ -31,7 +32,7 @@ class Classifier:
             logging_steps=100,  # Log every 100 steps
             fp16=True  # Enable mixed precision for faster training
         )
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained("bert-large-uncased")
         # self.tokenizer.save_pretrained("./bert/tokenizer")
         data_collator = transformers.DataCollatorWithPadding(tokenizer=self.tokenizer)
 
