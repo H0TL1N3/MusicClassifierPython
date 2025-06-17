@@ -259,8 +259,6 @@ class MediaPlayer(ttk.Frame):
                     self.playlists[tab][idx]["text"] = result["text"]
                     # FIXME: Sample color change for now, implement change based on classification.
                     self.playlists[tab][idx]["status"] = "Rap"
-                    print("done")
-                    print(self.playlists)
                     # Callback to rerender lyrics
                     if idx == self.current_track_index:
                         self.select_track(tab, idx)
