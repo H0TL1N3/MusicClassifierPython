@@ -27,8 +27,6 @@ PyCharm tends to give warnings if Constants are used.
    2. Here is some info about [keyword usage in ttkbootstrap](https://ttkbootstrap.readthedocs.io/en/latest/gettingstarted/tutorial/#keyword-usage).
 
 ## IMPORTANT: Please Note that the project is not yet complete.
-### TODO List:
-1. Add models (BERT, NB)... - currently cannot be pushed
 ### DONE List:
 1. Basic layout for the app.
 2. Playlist functionality.
@@ -37,3 +35,5 @@ PyCharm tends to give warnings if Constants are used.
 5. Playback and seeking of audio.
 6. Color guides to show the result of the classification
 7. Functions that classify the text.
+8. BERT classifier
+9. GaussianNaiveBayes classifier
