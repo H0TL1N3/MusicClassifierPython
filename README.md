@@ -22,11 +22,10 @@ PyCharm tends to give warnings if Constants are used.
 ### TODO List:
 1. Add models (BERT, NB)...
 2. Implement functions that will classify the text.
-3. Color guides for buttons (e.g. `danger` - rock, `info` - rap, etc.)
-   1. Let's use the names `ttkbootstrap` provides so that our app can match the current theme.
 ### DONE List:
 1. Basic layout for the app.
 2. Playlist functionality.
 3. File addition.
 4. Audio transcription using OpenAI Whisper.
 5. Playback and seeking of audio.
+6. Color guides to show the result of the classification

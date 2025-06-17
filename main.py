@@ -41,14 +41,27 @@ class MediaPlayer(ttk.Frame):
         self.is_playing = False
         self.pause_position = 0
         self._stop_playback = threading.Event()
+        # Color guide
+        # Names taken from:
+        # https://ttkbootstrap.readthedocs.io/en/latest/styleguide/#colors
+        self.color_legend = [
+            ( "R&B", "primary" ),
+            ( "Pop", "success" ),
+            ( "Rock", "danger" ),
+            ( "Rap", "warning" ),
+            ( "Country", "info" ),
+            ( "Uncategorized", "secondary" )
+        ]
         # Layout
         self.main = None
+        self.guide = None
         self.top = None
         self.left = None
         self.right = None
         self.bottom = None
         # Creating GUI elements
         self.create_layout()
+        self.create_guide()
         self.create_text_window()
         self.create_playlists()
         self.create_progress_meter()
@@ -57,6 +70,8 @@ class MediaPlayer(ttk.Frame):
     def create_layout(self):
         self.main = ttk.Frame(self)
         self.main.pack(fill="both", expand=True)
+        self.guide = ttk.Frame(self.main)
+        self.guide.pack(side="top", fill="both", expand=True)
         self.top = ttk.Frame(self.main)
         self.top.pack(side="top", fill="both", expand=True)
         self.left = ttk.Frame(self.top)
@@ -65,6 +80,20 @@ class MediaPlayer(ttk.Frame):
         self.right.pack(side="right", fill="y", padx=5, pady=5)
         self.bottom = ttk.Frame(self.main)
         self.bottom.pack(side="bottom", fill="both", padx=5, pady=5)
+
+    def create_guide(self):
+        """Create a color-coded legend at the top of the app."""
+        legend_frame = ttk.Frame(self.guide)  # Place it directly under the root
+        legend_frame.pack(side="top", fill="x", padx=10, pady=5)
+        for label_text, style in self.color_legend:
+            item_frame = ttk.Frame(legend_frame)
+            item_frame.pack(side="left", padx=10)
+            # Colored square
+            color_box = ttk.Frame(item_frame, bootstyle=style, width=15, height=15)
+            color_box.pack(side="left", padx=(0, 5))
+            # Description
+            desc = ttk.Label(item_frame, text=label_text)
+            desc.pack(side="left")
 
     def create_text_window(self):
         """Create frame to contain scrolled text"""
