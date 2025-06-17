@@ -1,3 +1,8 @@
+import torch
+import classifier
+
+print("GPU is available:",torch.cuda.is_available())
+
 ## GUI
 from tkinter import filedialog as fd
 import ttkbootstrap as ttk
@@ -249,6 +254,8 @@ class MediaPlayer(ttk.Frame):
     def transcribe_audio(self, file_path, tab):
         try:
             result = model.transcribe(file_path)
+            genreClass = classifier.classify(result["text"])
+            print("genre:", genreClass)
             for idx, entry in enumerate(self.playlists[tab]):
                 if entry["path"] == file_path:
                     self.playlists[tab][idx]["text"] = result["text"]
@@ -368,10 +375,18 @@ if __name__ == '__main__':
     root = ttk.Window()
     root.title("Media Player")
     mp = MediaPlayer(root)
+    classifier = classifier.Classifier()
+    classifier.init()
+
 
     # Load whisper model
     # About available models:
     # https://pypi.org/project/openai-whisper/
-    model = whisper.load_model("base.en")
+    if torch.cuda.is_available():
+        torch.cuda.init()
+        device = "cuda"
+        model = whisper.load_model("base.en").to(device)
+    else:
+        model = whisper.load_model("base.en")
 
     root.mainloop()
