@@ -3,7 +3,7 @@ import trainer
 from torch.optim import AdamW
 import numpy as np
 
-class Classifier:
+class BERTClassifier:
     def __init__(self):
         self.trainer = None
         self.tokenizer = None

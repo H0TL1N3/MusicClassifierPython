@@ -1,7 +1,8 @@
 import torch
-import classifier
+import BERTClassifier
+import NBClassifier
 
-print("GPU is available:",torch.cuda.is_available())
+print("GPU is available:", torch.cuda.is_available())
 
 ## GUI
 from tkinter import filedialog as fd
@@ -16,6 +17,7 @@ import time
 import whisper
 ## Async components
 import threading
+
 
 class MediaPlayer(ttk.Frame):
     def __init__(self, master):
@@ -259,8 +261,12 @@ class MediaPlayer(ttk.Frame):
     def transcribe_audio(self, file_path, tab, key):
         try:
             result = model.transcribe(file_path)
-            genreClass =  classifier.id_to_class[classifier.classify(result["text"])]
-            print("genre:", genreClass)
+            if self.current_tab == 'BERT':
+                genreClass = bertClassifier.id_to_class[bertClassifier.classify(result["text"])]
+                print("genre:", genreClass)
+            elif self.current_tab == 'NaiveBayes':
+                pred = nbClassifier.classify(result["text"])
+                genreClass = nbClassifier.id_to_class[pred]
             for idx, entry in enumerate(self.playlists[tab]):
                 if entry["key"] == key:
                     self.playlists[tab][idx]["text"] = result["text"]
@@ -373,11 +379,12 @@ class MediaPlayer(ttk.Frame):
         new_pos_ms = int(new_pos_sec * 1000)
         # Set new position
         self.stop_audio(clear_track=False)
-        #self.pause_audio()
+        # self.pause_audio()
         self.pause_position = new_pos_ms
         self.play_audio()
         # Stop manual seeking
         self.seeking = False
+
 
 if __name__ == '__main__':
     # Load GUI
@@ -386,8 +393,11 @@ if __name__ == '__main__':
     mp = MediaPlayer(root)
 
     # Load classifier
-    classifier = classifier.Classifier()
-    classifier.init()
+    bertClassifier = BERTClassifier.BERTClassifier()
+    bertClassifier.init()
+
+    nbClassifier = NBClassifier.NBClassifier()
+    nbClassifier.init()
 
     # Load whisper model
     # About available models:
