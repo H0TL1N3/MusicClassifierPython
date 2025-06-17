@@ -1,3 +1,6 @@
+cython<3.0.0
+wheel
+pyyaml==5.4.1
 ttkbootstrap==1.13.10
 torch
 torchaudio
@@ -12,3 +15,5 @@ huggingface_hub
 fsspec
 pydub
 simpleaudio
+transformers<5.0.0
+trainer

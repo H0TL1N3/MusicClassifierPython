@@ -242,7 +242,7 @@ class MediaPlayer(ttk.Frame):
 
     def file_dialog(self):
         file_path = fd.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav *.flac *.ogg *.m4a")])
-        key = len(self.current_tab)
+        key = len(self.playlists[self.current_tab])
         self.add_track(file_path, self.current_tab, key)
         threading.Thread(target=self.transcribe_audio, args=(file_path, self.current_tab, key)).start()
 
@@ -264,7 +264,6 @@ class MediaPlayer(ttk.Frame):
             for idx, entry in enumerate(self.playlists[tab]):
                 if entry["key"] == key:
                     self.playlists[tab][idx]["text"] = result["text"]
-                    # FIXME: Sample color change for now, implement change based on classification.
                     self.playlists[tab][idx]["status"] = genreClass
                     # Callback to rerender lyrics
                     if idx == self.current_track_index:
@@ -381,12 +380,14 @@ class MediaPlayer(ttk.Frame):
         self.seeking = False
 
 if __name__ == '__main__':
+    # Load GUI
     root = ttk.Window()
     root.title("Media Player")
     mp = MediaPlayer(root)
+
+    # Load classifier
     classifier = classifier.Classifier()
     classifier.init()
-
 
     # Load whisper model
     # About available models:
@@ -398,4 +399,5 @@ if __name__ == '__main__':
     else:
         model = whisper.load_model("base.en")
 
+    # Main loop for GUI
     root.mainloop()
