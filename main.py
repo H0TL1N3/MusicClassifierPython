@@ -26,6 +26,8 @@ class MediaPlayer(ttk.Frame):
             "BERT": [],
             "NaiveBayes": []
         }
+        # Structure of entry in playlist:
+        # path, text, key, status (for classification)
         self.current_tab = "BERT"
         self.notebook = None
         self.playlist_frames = {}
@@ -49,14 +51,14 @@ class MediaPlayer(ttk.Frame):
         # Color guide
         # Names taken from:
         # https://ttkbootstrap.readthedocs.io/en/latest/styleguide/#colors
-        self.color_legend = [
-            ( "R&B", "primary" ),
-            ( "Pop", "success" ),
-            ( "Rock", "danger" ),
-            ( "Rap", "warning" ),
-            ( "Country", "info" ),
-            ( "Uncategorized", "secondary" )
-        ]
+        self.color_legend = {
+            "R&B": "primary",
+            "Pop": "success",
+            "Rock": "danger",
+            "Rap": "warning",
+            "Country": "info",
+            "Uncategorized": "secondary"
+        }
         # Layout
         self.main = None
         self.guide = None
@@ -90,7 +92,7 @@ class MediaPlayer(ttk.Frame):
         """Create a color-coded legend at the top of the app."""
         legend_frame = ttk.Frame(self.guide)  # Place it directly under the root
         legend_frame.pack(side="top", fill="x", padx=10, pady=5)
-        for label_text, style in self.color_legend:
+        for label_text, style in self.color_legend.items():
             item_frame = ttk.Frame(legend_frame)
             item_frame.pack(side="left", padx=10)
             # Colored square
@@ -225,7 +227,7 @@ class MediaPlayer(ttk.Frame):
             btn = ttk.Button(
                 frame,
                 text=filename,
-                bootstyle="secondary",
+                bootstyle=self.color_legend[entry["status"]],
                 command=lambda idx=index, name=playlist_name: self.select_track(name, idx)
             )
             btn.pack(fill="x", pady=2)
@@ -240,29 +242,36 @@ class MediaPlayer(ttk.Frame):
 
     def file_dialog(self):
         file_path = fd.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav *.flac *.ogg *.m4a")])
-        self.add_track(file_path, self.current_tab)
-        threading.Thread(target=self.transcribe_audio, args=(file_path, self.current_tab)).start()
+        key = len(self.current_tab)
+        self.add_track(file_path, self.current_tab, key)
+        threading.Thread(target=self.transcribe_audio, args=(file_path, self.current_tab, key)).start()
 
-    def add_track(self, file_path, tab):
+    def add_track(self, file_path, tab, key):
         entry = {
             "path": file_path,
-            "text": "In Progress"
+            "text": "In Progress",
+            "key": key,
+            "status": "Uncategorized"
         }
         self.playlists[tab].append(entry)
         self.render_playlist(tab)
 
-    def transcribe_audio(self, file_path, tab):
+    def transcribe_audio(self, file_path, tab, key):
         try:
             result = model.transcribe(file_path)
             genreClass = classifier.classify(result["text"])
             print("genre:", genreClass)
             for idx, entry in enumerate(self.playlists[tab]):
-                if entry["path"] == file_path:
+                if entry["key"] == key:
                     self.playlists[tab][idx]["text"] = result["text"]
-                    # TODO: Test later that this callback works correctly.
+                    # FIXME: Sample color change for now, implement change based on classification.
+                    self.playlists[tab][idx]["status"] = "Rap"
                     # Callback to rerender lyrics
                     if idx == self.current_track_index:
                         self.select_track(tab, idx)
+                    # Callback to rerender buttons if this tab is still open
+                    if self.current_tab == tab:
+                        self.render_playlist(tab)
         except Exception as e:
             for entry in self.playlists[self.current_tab]:
                 if entry["path"] == file_path:
