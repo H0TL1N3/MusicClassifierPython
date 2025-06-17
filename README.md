@@ -26,15 +26,14 @@ PyCharm tends to give warnings if Constants are used.
    1. Please note that `bootstyle` will probably give a warning no matter what approach you use.
    2. Here is some info about [keyword usage in ttkbootstrap](https://ttkbootstrap.readthedocs.io/en/latest/gettingstarted/tutorial/#keyword-usage).
 
-## IMPORTANT: Please Note that the project is not yet complete.
-### DONE List:
+## List of things achieved
 1. Basic layout for the app.
 2. Playlist functionality.
 3. File addition.
 4. Audio transcription using OpenAI Whisper.
 5. Playback and seeking of audio.
-6. Color guides to show the result of the classification
+6. Color guides to show the result of the classification.
 7. Functions that classify the text.
-8. BERT classifier
-9. GaussianNaiveBayes classifier
-10. Added Jupyter Notebooks
+8. BERT classifier.
+9. GaussianNaiveBayes classifier.
+10. Added Jupyter Notebooks.
