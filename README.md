@@ -37,3 +37,4 @@ PyCharm tends to give warnings if Constants are used.
 7. Functions that classify the text.
 8. BERT classifier
 9. GaussianNaiveBayes classifier
+10. Added Jupyter Notebooks
