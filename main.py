@@ -236,7 +236,7 @@ class MediaPlayer(ttk.Frame):
             btn.pack(fill="x", pady=2)
 
     def select_track(self, playlist_name, index):
-        entryplaylists[playlist_name][index]
+        entry = self.playlists[playlist_name][index]
         # Redundant change of playlist, but may be useful in some scenarios
         self.current_tab = playlist_name
         self.current_track_index = index
@@ -290,12 +290,12 @@ class MediaPlayer(ttk.Frame):
         if self.current_tab is None or self.current_track_index is None:
             return
         # Load info
-        trackplaylists[self.current_tab][self.current_track_index]
+        track = self.playlists[self.current_tab][self.current_track_index]
         audio_path = track['path']
         # Resume existing playback
         if self.pause_position > 0 and self.current_track_index == self.playing_track_index:
             self.stop_audio(clear_track=False)
-            audio_segmentcurrent_audio[self.pause_position:]
+            audio_segment = self.current_audio[self.pause_position:]
         else:
             self.stop_audio()
             self.current_audio = AudioSegment.from_file(audio_path)
