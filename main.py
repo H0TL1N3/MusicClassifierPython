@@ -355,6 +355,7 @@ class MediaPlayer(ttk.Frame):
         self.is_playing = False
         if clear_track:
             self.current_audio = None
+            self.pause_position = 0
             # Reset text and scale
             self.elapsed_var.set(0)
             self.remain_var.set(0)
