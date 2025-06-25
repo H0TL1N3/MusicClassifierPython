@@ -34,6 +34,7 @@ class MediaPlayer(ttk.Frame):
         self.notebook = None
         self.playlist_frames = {}
         self.current_track_index = None
+        self.playing_track_index = None
         # Scrolled Text state
         self.transcribedText = None
         # Progress bar state
@@ -292,12 +293,14 @@ class MediaPlayer(ttk.Frame):
         track = self.playlists[self.current_tab][self.current_track_index]
         audio_path = track['path']
         # Resume existing playback
-        if self.current_audio and self.pause_position > 0:
+        if self.pause_position > 0 and self.current_track_index = self.playing_track_index:
             self.stop_audio(clear_track=False)
             audio_segment = self.current_audio[self.pause_position:]
         else:
-            self.stop_audio(clear_track=False)
+            self.stop_audio()
             self.current_audio = AudioSegment.from_file(audio_path)
+            self.playing_track_index = self.current_track_index
+            self.pause_position = 0
             audio_segment = self.current_audio
         # Load audio
         self.current_play_obj = sa.play_buffer(
@@ -351,10 +354,7 @@ class MediaPlayer(ttk.Frame):
         self.is_playing = False
         if clear_track:
             self.current_audio = None
-            self.current_track_index = None
-            self.pause_position = 0
             # Reset text and scale
-            self.transcribedText.delete("1.0", "end")
             self.elapsed_var.set(0)
             self.remain_var.set(0)
             self.scale.set(0)
