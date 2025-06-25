@@ -216,6 +216,7 @@ class MediaPlayer(ttk.Frame):
         self.current_tab = list(self.playlists.keys())[selected_index]
         self.current_track_index = None
         self.transcribedText.delete("1.0", "end")
+        self.stop_audio()
 
     def render_playlist(self, playlist_name):
         # Get
