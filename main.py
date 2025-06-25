@@ -80,8 +80,9 @@ class MediaPlayer(ttk.Frame):
     def create_layout(self):
         self.main = ttk.Frame(self)
         self.main.pack(fill="both", expand=True)
+        self.main.option_add("*Font", ("Helvetica", 16))
         self.guide = ttk.Frame(self.main)
-        self.guide.pack(side="top", fill="both", expand=True)
+        self.guide.pack(side="top", fill="both", expand=False)
         self.top = ttk.Frame(self.main)
         self.top.pack(side="top", fill="both", expand=True)
         self.left = ttk.Frame(self.top)
