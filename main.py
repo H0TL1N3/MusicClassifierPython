@@ -247,6 +247,8 @@ class MediaPlayer(ttk.Frame):
 
     def file_dialog(self):
         file_path = fd.askopenfilename(filetypes=[("Audio Files", "*.mp3 *.wav *.flac *.ogg *.m4a")])
+        if file_path == "":
+            return
         key = len(self.playlists[self.current_tab])
         self.add_track(file_path, self.current_tab, key)
         threading.Thread(target=self.transcribe_audio, args=(file_path, self.current_tab, key)).start()
